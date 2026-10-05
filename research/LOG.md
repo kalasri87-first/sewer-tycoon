@@ -107,3 +107,4 @@ Naive rounding breaks the timing (18.76 ML), so the discrete search is still nee
 
 SWMM engine used throughout: pyswmm 2.2.0 / swmm-toolkit 0.17.0 / SWMM 5.2.4. The 12.45
 plan's report has no warnings or flooding; continuity error 0.008%.
+| 13 | Steepest descent (1-digit, shifts, 2-digit) from the rounded CMA plan | 18.76 | 12.45 | `444441110200-444444220200-424444441210-244443222212` (ties #10; two 1-digit moves, then stuck) |
