@@ -9,10 +9,13 @@ better finish than the one the incumbent uses?
 """
 import argparse
 import csv
+import os
 import sys
+from multiprocessing import Pool
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from beam import child_state  # noqa: E402
 from bnb import search  # noqa: E402
 
 from stormline.grade import parse_plan, plan_code, run  # noqa: E402
@@ -20,7 +23,10 @@ from stormline.grade import parse_plan, plan_code, run  # noqa: E402
 RUNS = Path(__file__).resolve().parent / "runs.csv"
 
 
-def openings(hours, top, max_spill):
+def openings(hours, top, max_spill, state_grid=0.5):
+    """Best distinct openings, de-duplicated by the tank state they reach at `hours`
+    (rounded to state_grid ML) so that plateau variants (different digits, same water)
+    count once."""
     best = {}
     with RUNS.open() as f:
         for r in csv.DictReader(f):
@@ -31,7 +37,20 @@ def openings(hours, top, max_spill):
             key = tuple(tuple(p[i][t] for i in range(4)) for t in range(hours))
             if key not in best or s < best[key][0]:
                 best[key] = (s, r["plan"])
-    return sorted(best.items(), key=lambda kv: kv[1][0])[:top]
+    ranked = sorted(best.items(), key=lambda kv: kv[1][0])
+    with Pool(os.cpu_count()) as pool:
+        sims = pool.map(child_state, [list(k) for k, _ in ranked], chunksize=16)
+    out, seen = [], set()
+    for (key, val), (_, vols, spill) in zip(ranked, sims):
+        skey = tuple(round(v / state_grid) for v in vols) + (round(spill / 0.05),)
+        if skey in seen:
+            continue
+        seen.add(skey)
+        out.append((key, val))
+        if len(out) >= top:
+            break
+    print(f"{len(ranked)} distinct digit-openings -> {len(seen)} distinct hour-{hours} states kept", flush=True)
+    return out
 
 
 if __name__ == "__main__":
