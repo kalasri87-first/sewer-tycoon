@@ -113,3 +113,9 @@ plan's report has no warnings or flooding; continuity error 0.008%.
 
 So the branch-and-bound pruning (#14, #16) is sound: no plan that would score ≤ 12.44 can be
 pruned at an incumbent of 12.45.
+| 16 | Branch-and-bound as #14 but fine grid (0.25 ML), width up to 3000 | empty plan | nothing < 12.45 | viable states per hour: 5, 42, 39, 47, 259, 591, 38, 7, then 0 at hour 9 (every path ≥ 12.45 by then) |
+
+Caveat on #14/#16: states within 0.25 ML of each other are merged, and the kept
+representative is arbitrary. This merged the 12.45 plan's own hour-1 state with a
+near-identical one (T3 holding 0.05 ML vs 0), so these runs are very wide searches but not
+strict proofs of optimality.
