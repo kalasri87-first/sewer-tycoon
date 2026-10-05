@@ -95,3 +95,4 @@ survive pruning after hour 7, 1 after hours 8 and 9). The gain is in hour 10: T1
 50% together (instead of 25%) moves T1's leftover water down to T4 in one go; hours 11–12 can
 then be closed. So for this opening, 12.45 is the best tail; any further gain must come
 from changing hours 1–6.
+| 11 | Iterated local search (kicks of 2–6 cells around the peak, single-digit re-descent, accept ties), 20 min | 12.47 | no improvement | |
