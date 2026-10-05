@@ -32,7 +32,7 @@ from pyswmm import Links, Nodes, Simulation  # noqa: E402
 import lp_core  # noqa: E402  (corrected LP with weir surcharge)
 
 from stormline.build_model import CAP_ML, CD, CREST, GATE_H, HOURS, ML_PER_H, QMAX_MLH, WORKS_MLH, inflow_mlh  # noqa: E402
-from stormline.grade import INP, OUTFALLS, plan_code, run  # noqa: E402
+from stormline.grade import INP, OUTFALLS, parse_plan, plan_code, run  # noqa: E402
 
 G = 9.81
 WIDTH = [QMAX_MLH[i] * ML_PER_H / (CD * GATE_H * math.sqrt(2 * G * (CREST - GATE_H / 2))) for i in range(4)]
@@ -164,12 +164,13 @@ def state_value(args):
 COMBOS = list(itertools.product(range(5), repeat=4))
 
 
-def beam(width, incumbent=1e9, verbose=True):
+def beam(width, incumbent=1e9, verbose=True, start_prefix=None):
     """Beam search; children are simulated, de-duplicated by rounded state, pruned if their
-    spill so far already exceeds the incumbent, and only then scored with the LP."""
+    spill so far already exceeds the incumbent, and only then scored with the LP.
+    start_prefix: optional fixed settings for the first hours (list of 4-tuples)."""
     pool = Pool(os.cpu_count())
-    level = [[]]
-    for h in range(HOURS):
+    level = [list(start_prefix or [])]
+    for h in range(len(level[0]), HOURS):
         t0 = time.time()
         children = [p + [c] for p in level for c in COMBOS]
         sims = pool.map(child_state, children, chunksize=64)
@@ -184,6 +185,11 @@ def beam(width, incumbent=1e9, verbose=True):
         vals = pool.map(state_value, [(h + 1, st[1]) for st in states], chunksize=16)
         scored = sorted(((st[2] + v, st) for st, v in zip(states, vals)), key=lambda x: x[0])
         nxt = scored[:width]
+        if not nxt:
+            print(f"hour {h + 1:2d}: every child already spills >= incumbent {incumbent}; nothing better on this beam",
+                  flush=True)
+            pool.close()
+            return []
         level = [st[0] for _, st in nxt]
         if verbose:
             val, (prefix, vols, spill) = nxt[0]
@@ -198,7 +204,13 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--width", type=int, default=20)
     ap.add_argument("--incumbent", type=float, default=1e9)
+    ap.add_argument("--from-plan", default=None, help="keep this plan's first --hours hours fixed")
+    ap.add_argument("--hours", type=int, default=0)
     a = ap.parse_args()
-    plans = beam(a.width, a.incumbent)
+    pre = None
+    if a.from_plan:
+        fp = parse_plan(a.from_plan)
+        pre = [tuple(fp[i][t] for i in range(4)) for t in range(a.hours)]
+    plans = beam(a.width, a.incumbent, start_prefix=pre)
     for p in plans[:10]:
         print(f"RESULT {run(p)['spill_ML']:.2f} {plan_code(p)}", flush=True)

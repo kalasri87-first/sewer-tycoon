@@ -82,3 +82,9 @@ concave rating bound overestimates what a nearly empty tank can release (it char
 "loss" to hour 3, when every gate in the 12.47 plan is already fully open).
 | 7b | Block search, round 1 from 12.47 | #7 | no further improvement | 12.47 is optimal w.r.t. every joint hour block, 2×2 block and 4-hour single-tank block |
 | 8 | Steepest descent (1-digit, shifts, all 2-digit pairs ±2) | 12.47 | no improvement | 12.47 is also a local optimum for these moves |
+| 9 | Beam search over hours, width 30, all 625 gate combos per hour, score = SWMM spill so far + corrected-LP cost-to-go; prune any prefix whose spill already ≥ incumbent | empty plan | no plan < 12.47 | beam converged on the same hour-6 state as the 12.47 plan ([98.1, 98.4, 121.5, 75.4] ML); by hour 9 every surviving path had spilled ≥ 12.47 |
+
+Notes on #9: the beam is an independent check. It is guided by the LP, not by local moves,
+yet it lands in the same basin. From the hour-6 state the LP says ≥ 8.04 ML more spill is
+unavoidable; the 12.47 plan spills 8.48 more, so there is at most ~0.4 ML left to find in
+hours 7–12 from that state.
