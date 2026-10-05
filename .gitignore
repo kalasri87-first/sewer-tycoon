@@ -1,0 +1,5 @@
+*.out
+*.rpt
+__pycache__/
+research/runs.csv
+research/*.npy
