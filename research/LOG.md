@@ -109,3 +109,7 @@ SWMM engine used throughout: pyswmm 2.2.0 / swmm-toolkit 0.17.0 / SWMM 5.2.4. Th
 plan's report has no warnings or flooding; continuity error 0.008%.
 | 13 | Steepest descent (1-digit, shifts, 2-digit) from the rounded CMA plan | 18.76 | 12.45 | `444441110200-444444220200-424444441210-244443222212` (ties #10; two 1-digit moves, then stuck) |
 | 14 | Branch-and-bound over hours, diversity grid 2 ML, width 100: prune if SWMM spill so far ≥ 12.45 or spill + LP bound ≥ 12.45 | empty plan | nothing < 12.45 | after hour 3 only 5 of 344 states could still beat 12.45; empty by hour 9 |
+| 15 | Validation of the corrected LP bound (research/validate_lp.py): 350 plans with spill < 16 ML (50 best + 300 random of 25,855), check spill so far + LP ≤ final spill at every hour | — | bound holds | worst excess +0.005 ML, which is the grader's rounding of the final score to 0.01 ML (occurs at hours 10–11 where the LP term is 0) |
+
+So the branch-and-bound pruning (#14, #16) is sound: no plan that would score ≤ 12.44 can be
+pruned at an incumbent of 12.45.
