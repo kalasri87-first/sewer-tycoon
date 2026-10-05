@@ -119,3 +119,47 @@ Caveat on #14/#16: states within 0.25 ML of each other are merged, and the kept
 representative is arbitrary. This merged the 12.45 plan's own hour-1 state with a
 near-identical one (T3 holding 0.05 ML vs 0), so these runs are very wide searches but not
 strict proofs of optimality.
+| 17 | Exhaustive-tail check (research/tails.py): branch-and-bound over hours 7–12 (0.05 ML de-dup, LP pruning) from the 30 best openings in runs.csv, first by digits, then de-duplicated by the hour-6 *tank state* (30 genuinely different states, best known 12.45–12.82) | — | nothing < 12.45 | no known opening has a finish that beats 12.45 |
+
+## Result
+
+**Best plan: `444441110200-444444220200-444444441200-234433222200`, 12.45 ML total spill**
+(official `python -m stormline.grade`; T1 1.05, T2 4.21, T3 7.19, T4 0.00, works 0.00).
+
+| Hour | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Tank 1 | 4 | 4 | 4 | 4 | 4 | 1 | 1 | 1 | 0 | 2 | 0 | 0 |
+| Tank 2 | 4 | 4 | 4 | 4 | 4 | 4 | 2 | 2 | 0 | 2 | 0 | 0 |
+| Tank 3 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 1 | 2 | 0 | 0 |
+| Tank 4 | 2 | 3 | 4 | 4 | 3 | 3 | 2 | 2 | 2 | 2 | 0 | 0 |
+
+Strategy, in plain terms:
+1. **Only the peak matters.** Spill = 564 − treated − stored at noon, and stored water is
+   free. All spill happens in hours 5–9; afterwards the only job is not to overtop anything.
+2. **Hours 1–5: everything open.** Push water downstream while the tanks are low, so each
+   has room for its own runoff peak and tank 4 builds the depth it needs to feed the works
+   (a nearly empty tank can't release much, however wide the gate).
+3. **Hours 6–8: hold back at the top, run flat out at the bottom.** T1 drops to 25% so the
+   upstream flood waits in T1 while T2 and T3 take their own runoff; T3 stays fully open
+   because the T3→T4 penstock is the bottleneck and T4 is the only tank with room left.
+4. **Never more than 20 ML/h to the works.** As tank 4 fills, its gate steps down from 75%
+   to 50% so the works get close to, but not over, 20 ML/h. (A wider gate on a full tank
+   would overflow at the works, which counts as spill just the same.)
+5. **Hour 10: open T1, T2, T3 together (50%)** to pass T1's leftover water down to T4 in one
+   go; opening T1 alone would just overtop T2. Then close everything.
+
+Evidence that this is at or very near the best possible:
+- LP lower bound with ideal minute-by-minute control: 10.3 ML. Continuous (any setting,
+  hourly) control in SWMM: 12.23 ML, so the 5-level rule costs only ~0.2 ML here.
+- Every independent method converged on 12.45: local search (single, shift, 2-digit),
+  joint block search, LP-guided beam, branch-and-bound with an LP bound validated on 350
+  trajectories, iterated local search, CMA-ES + descent, and exhaustive tails from 30
+  different openings.
+- 201,967 distinct plans fully scored with SWMM (plus ~1M partial simulations inside the
+  beam/branch-and-bound); 346 plans tie at 12.45. They differ only in settings that change
+  no flow (e.g. a gate on a nearly empty tank), and none is lower.
+
+Caveats: graded with pyswmm 2.2.0 / SWMM 5.2.4. Differences of a few hundredths of an ML
+(e.g. 12.45 vs 12.47) are within what a different SWMM version could shift. The plan is
+tuned to a perfectly known storm and would need feedback control to cope with forecast
+error. The raw log of every plan scored is `research/runs.csv.gz`.

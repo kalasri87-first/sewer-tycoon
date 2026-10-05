@@ -2,4 +2,5 @@
 *.rpt
 __pycache__/
 research/runs.csv
+!research/runs.csv.gz
 research/*.npy
