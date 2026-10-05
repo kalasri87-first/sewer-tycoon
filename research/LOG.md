@@ -88,3 +88,10 @@ Notes on #9: the beam is an independent check. It is guided by the LP, not by lo
 yet it lands in the same basin. From the hour-6 state the LP says ≥ 8.04 ML more spill is
 unavoidable; the 12.47 plan spills 8.48 more, so there is at most ~0.4 ML left to find in
 hours 7–12 from that state.
+| 10 | Tail beam (width 300) from the 12.47 plan's first 6 hours: all 625 combos per hour, exact incumbent pruning | 12.47 | **12.45** | `444441110200-444444220200-444444441200-234433222200` |
+
+Notes on #10: effectively an exhaustive search of hours 7–12 given hours 1–6 (only 3 states
+survive pruning after hour 7, 1 after hours 8 and 9). The gain is in hour 10: T1, T2, T3 at
+50% together (instead of 25%) moves T1's leftover water down to T4 in one go; hours 11–12 can
+then be closed. So for this opening, 12.45 is the best tail; any further gain must come
+from changing hours 1–6.
