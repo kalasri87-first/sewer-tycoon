@@ -81,3 +81,4 @@ bound is now monotone (10.6 → 12.5) as it should be.
 concave rating bound overestimates what a nearly empty tank can release (it charges 0.57 ML
 "loss" to hour 3, when every gate in the 12.47 plan is already fully open).
 | 7b | Block search, round 1 from 12.47 | #7 | no further improvement | 12.47 is optimal w.r.t. every joint hour block, 2×2 block and 4-hour single-tank block |
+| 8 | Steepest descent (1-digit, shifts, all 2-digit pairs ±2) | 12.47 | no improvement | 12.47 is also a local optimum for these moves |
